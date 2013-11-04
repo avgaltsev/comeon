@@ -115,12 +115,10 @@
 			
 			iframe.onload = function () {
 				
-				var self = this;
+				var moduleId = moduleQueue[moduleQueue.length - 1];
 				
-				var moduleId = moduleQueue.pop();
-				
-				var iframeWindow = self.contentWindow;
-				var iframeDocument = self.contentDocument;
+				var iframeWindow = this.contentWindow;
+				var iframeDocument = this.contentDocument;
 				
 				iframeWindow.require = require.bind(self, getModuleContext(moduleId));
 				
@@ -146,7 +144,7 @@
 						
 					}, 1000);
 					
-					loadNextModule.bind(self)(moduleQueue);
+					loadNextModule.bind(self)(moduleQueue.slice(0, -1));
 					
 				};
 				
