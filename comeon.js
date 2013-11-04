@@ -1,10 +1,15 @@
-(function () {
+(function (window) {
+	
 	
 	var script = Array.prototype.slice.call(document.getElementsByTagName("script"), -1)[0];
 	
 	var path = script.getAttribute("data-path") || "/";
 	
-	var mainModuleName = script.getAttribute("data-main") || "main";
+	var main = script.getAttribute("data-main") || "main";
+	
+	
+	var requirePattern = /(?:^|\s|=)require\((?:"|')([^"']*)(?:"|')\)/g;
+	
 	
 	function searchRequires(url) {
 		
@@ -14,15 +19,13 @@
 		
 		xhr.open("get", url, false);
 		
-		xhr.onreadystatechange = function() {
+		xhr.onreadystatechange = function () {
 			
 			if ((xhr.readyState === 4) && (xhr.status === 200)) {
 				
-				var pattern = /(?:^|\s|=)require\((?:"|')([^"']*)(?:"|')\)/g;
-				
 				var match;
 				
-				while ((match = pattern.exec(xhr.responseText)) !== null) {
+				while ((match = requirePattern.exec(xhr.responseText)) !== null) {
 					requires.push(match[1]);
 				}
 				
@@ -36,39 +39,72 @@
 		
 	}
 	
+	
 	var modules = {};
 	
-	var queue = [];
 	
-	function enqueueModule(moduleName) {
+	function getModuleId() {
 		
-		if (!modules[moduleName]) {
+		var moduleId = [];
+		
+		Array.prototype.join.call(arguments, "/").replace(/\.(?:js|node)$/, "").split("/").forEach(function (value) {
 			
-			modules[moduleName] = {
-				url: path + moduleName + ".js?ts=" + (new Date()).valueOf()
+			if (value === ".") {
+			} else if (value === "..") {
+				moduleId.pop();
+			} else if (/[\w\-\.]+/.test(value)) {
+				moduleId.push(value);
+			}
+			
+		});
+		
+		return moduleId.join("/");
+		
+	}
+	
+	
+	function getModuleContext(moduleId) {
+		
+		return moduleId.slice(0, moduleId.lastIndexOf("/") + 1);
+		
+	}
+	
+	
+	function require(context, query) {
+		
+		return this[getModuleId(/^\.\.?\//.test(query) ? context + query : query)].exports;
+		
+	}
+	
+	
+	function enqueueModule(path, query) {
+		
+		var moduleId = getModuleId(query);
+		
+		var queue = [];
+		
+		if (!modules[moduleId]) {
+			
+			modules[moduleId] = {
+				url: path + moduleId + ".js?ts=" + (new Date()).valueOf()
 			};
 			
-			var requires = searchRequires(modules[moduleName].url);
-			
-			requires.forEach(function (value) {
+			searchRequires(modules[moduleId].url).forEach(function (value) {
 				
-				enqueueModule(value);
+				Array.prototype.push.apply(queue, enqueueModule(path, (/^\.\.?\//.test(value) ? getModuleContext(moduleId) + value : value)));
 				
 			});
 			
-			queue.push(moduleName);
+			queue.push(moduleId);
 			
 		}
 		
-	}
-	
-	function require(moduleName) {
-		
-		return modules[moduleName].exports;
+		return queue;
 		
 	}
 	
-	function loadNextModule() {
+	
+	function loadNextModule(queue) {
 		
 		if (queue.length) {
 			
@@ -79,12 +115,12 @@
 			
 			iframe.onload = function () {
 				
-				var self = this;
+				var moduleId = queue.shift();
 				
-				var iframeWindow = self.contentWindow;
-				var iframeDocument = self.contentDocument;
+				var iframeWindow = this.contentWindow;
+				var iframeDocument = this.contentDocument;
 				
-				iframeWindow.require = require;
+				iframeWindow.require = require.bind(modules, getModuleContext(moduleId));
 				
 				iframeWindow.exports = {};
 				
@@ -92,15 +128,13 @@
 					exports: iframeWindow.exports
 				}
 				
-				var moduleName = queue.shift();
-				
 				var script = iframeDocument.createElement("script");
 				
-				script.src = modules[moduleName].url;
+				script.src = modules[moduleId].url;
 				
-				script.addEventListener("load", function () {
+				script.onload = function () {
 					
-					modules[moduleName].exports = iframeWindow.module.exports;
+					modules[moduleId].exports = iframeWindow.module.exports;
 					
 					setTimeout(function () {
 						
@@ -110,9 +144,9 @@
 						
 					}, 1000);
 					
-					loadNextModule();
+					loadNextModule(queue);
 					
-				});
+				};
 				
 				iframeDocument.head.appendChild(script);
 				
@@ -124,12 +158,12 @@
 		
 	}
 	
+	
 	window.onload = function () {
 		
-		enqueueModule(mainModuleName);
-		
-		loadNextModule();
+		loadNextModule(enqueueModule(path, main));
 		
 	}
 	
-})();
+	
+})(window);
