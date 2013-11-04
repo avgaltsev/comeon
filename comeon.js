@@ -1,14 +1,7 @@
 (function (window) {
 	
 	
-	var script = Array.prototype.slice.call(document.getElementsByTagName("script"), -1)[0];
-	
-	var path = script.getAttribute("data-path") || "/";
-	
-	var main = script.getAttribute("data-main") || "main";
-	
-	
-	var requirePattern = /(?:^|\s|=)require\((?:"|')([^"']*)(?:"|')\)/g;
+	var requirePattern = /(?:^|\s|=|;)require\((?:"|')([^"']*)(?:"|')\)/g;
 	
 	
 	function searchRequires(url) {
@@ -40,14 +33,11 @@
 	}
 	
 	
-	var modules = {};
-	
-	
-	function getModuleId() {
+	function getModuleId(moduleContext, moduleRequest) {
 		
 		var moduleId = [];
 		
-		Array.prototype.join.call(arguments, "/").replace(/\.(?:js|node)$/, "").split("/").forEach(function (value) {
+		(/^\.\.?\//.test(moduleRequest) ? (moduleContext + moduleRequest) : moduleRequest).replace(/\.(?:js|node)$/, "").split("/").forEach(function (value) {
 			
 			if (value === ".") {
 			} else if (value === "..") {
@@ -70,43 +60,53 @@
 	}
 	
 	
-	function require(context, query) {
+	function require(moduleContext, moduleRequest) {
 		
-		return this[getModuleId(/^\.\.?\//.test(query) ? context + query : query)].exports;
+		var self = this;
+		
+		var moduleId = getModuleId(moduleContext, moduleRequest);
+		
+		if (self.modules[moduleId]) {
+			return self.modules[moduleId].exports;
+		} else {
+			throw Error("Module not found.");
+		}
 		
 	}
 	
 	
-	function enqueueModule(path, query) {
+	function enqueueModule(moduleId) {
 		
-		var moduleId = getModuleId(query);
+		var self = this;
 		
-		var queue = [];
+		var moduleQueue = [];
 		
-		if (!modules[moduleId]) {
+		if (!self.modules[moduleId]) {
 			
-			modules[moduleId] = {
-				url: path + moduleId + ".js?ts=" + (new Date()).valueOf()
+			self.modules[moduleId] = {
+				url: self.path + moduleId + ".js?ts=" + (new Date()).valueOf()
 			};
 			
-			searchRequires(modules[moduleId].url).forEach(function (value) {
+			moduleQueue.push(moduleId);
+			
+			searchRequires(self.modules[moduleId].url).forEach(function (value) {
 				
-				Array.prototype.push.apply(queue, enqueueModule(path, (/^\.\.?\//.test(value) ? getModuleContext(moduleId) + value : value)));
+				Array.prototype.push.apply(moduleQueue, enqueueModule.bind(self)(getModuleId(getModuleContext(moduleId), value)));
 				
 			});
 			
-			queue.push(moduleId);
-			
 		}
 		
-		return queue;
+		return moduleQueue;
 		
 	}
 	
 	
-	function loadNextModule(queue) {
+	function loadNextModule(moduleQueue) {
 		
-		if (queue.length) {
+		var self = this;
+		
+		if (moduleQueue.length) {
 			
 			var iframe = document.createElement("iframe");
 			
@@ -115,12 +115,14 @@
 			
 			iframe.onload = function () {
 				
-				var moduleId = queue.shift();
+				var self = this;
 				
-				var iframeWindow = this.contentWindow;
-				var iframeDocument = this.contentDocument;
+				var moduleId = moduleQueue.pop();
 				
-				iframeWindow.require = require.bind(modules, getModuleContext(moduleId));
+				var iframeWindow = self.contentWindow;
+				var iframeDocument = self.contentDocument;
+				
+				iframeWindow.require = require.bind(self, getModuleContext(moduleId));
 				
 				iframeWindow.exports = {};
 				
@@ -130,11 +132,11 @@
 				
 				var script = iframeDocument.createElement("script");
 				
-				script.src = modules[moduleId].url;
+				script.src = self.modules[moduleId].url;
 				
 				script.onload = function () {
 					
-					modules[moduleId].exports = iframeWindow.module.exports;
+					self.modules[moduleId].exports = iframeWindow.module.exports;
 					
 					setTimeout(function () {
 						
@@ -144,7 +146,7 @@
 						
 					}, 1000);
 					
-					loadNextModule(queue);
+					loadNextModule.bind(self)(moduleQueue);
 					
 				};
 				
@@ -159,9 +161,42 @@
 	}
 	
 	
-	window.onload = function () {
+	function Comeon(path) { // TODO: multiple paths
 		
-		loadNextModule(enqueueModule(path, main));
+		var self = this;
+		
+		self.path = path;
+		
+		self.modules = [];
+		
+	}
+	
+	
+	Comeon.prototype.run = function (moduleRequest) {
+		
+		var self = this;
+		
+		loadNextModule.bind(self)(enqueueModule.bind(self)(getModuleId("", moduleRequest)));
+		
+	}
+	
+	
+	window.Comeon = Comeon;
+	
+	
+	var script = Array.prototype.slice.call(document.getElementsByTagName("script"), -1)[0];
+	
+	var main = script.getAttribute("data-main");
+	
+	if (main) {
+		
+		window.addEventListener("load", function () {
+			
+			var application = new Comeon(script.getAttribute("data-path") || "/");
+			
+			application.run(main);
+			
+		});
 		
 	}
 	
