@@ -120,13 +120,15 @@
 				var iframeWindow = this.contentWindow;
 				var iframeDocument = this.contentDocument;
 				
+				iframeWindow.global = window;
+				
 				iframeWindow.require = require.bind(self, getModuleContext(moduleId));
 				
-				iframeWindow.exports = {};
-				
 				iframeWindow.module = {
-					exports: iframeWindow.exports
+					exports: {}
 				}
+				
+				iframeWindow.exports = iframeWindow.module.exports;
 				
 				var script = iframeDocument.createElement("script");
 				
@@ -135,14 +137,6 @@
 				script.onload = function () {
 					
 					self.modules[moduleId].exports = iframeWindow.module.exports;
-					
-					setTimeout(function () {
-						
-						iframe.parentNode.removeChild(iframe);
-						
-						delete iframe;
-						
-					}, 1000);
 					
 					loadNextModule.bind(self)(moduleQueue.slice(0, -1));
 					
