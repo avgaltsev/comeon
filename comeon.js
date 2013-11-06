@@ -164,7 +164,7 @@
 	}
 	
 	
-	Comeon.prototype.run = function (moduleRequest) {
+	Comeon.prototype.run = function run(moduleRequest) {
 		
 		var self = this;
 		
