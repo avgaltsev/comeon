@@ -10,7 +10,7 @@
 		
 		var xhr = new XMLHttpRequest();
 		
-		xhr.open("get", url, false);
+		xhr.open("GET", url, false);
 		
 		xhr.onreadystatechange = function () {
 			
@@ -184,9 +184,9 @@
 		
 		window.addEventListener("load", function () {
 			
-			var application = new Comeon(script.getAttribute("data-path") || "/");
+			var comeon = new Comeon(script.getAttribute("data-path") || "/");
 			
-			application.run(main);
+			comeon.run(main);
 			
 		});
 		
