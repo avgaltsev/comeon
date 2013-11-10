@@ -66,7 +66,7 @@
 		
 		var moduleId = getModuleId(moduleContext, moduleRequest);
 		
-		if (self.modules[moduleId]) {
+		if (self.modules[moduleId] && self.modules[moduleId].exports) {
 			return self.modules[moduleId].exports;
 		} else {
 			throw Error("Module not found.");
@@ -102,7 +102,7 @@
 	}
 	
 	
-	function loadNextModule(moduleQueue) {
+	function loadNextModule(moduleQueue, callback) {
 		
 		var self = this;
 		
@@ -115,7 +115,7 @@
 			
 			iframe.onload = function () {
 				
-				var moduleId = moduleQueue[moduleQueue.length - 1];
+				var moduleId = moduleQueue.pop();
 				
 				var iframeWindow = this.contentWindow;
 				var iframeDocument = this.contentDocument;
@@ -138,7 +138,12 @@
 					
 					self.modules[moduleId].exports = iframeWindow.module.exports;
 					
-					loadNextModule.bind(self)(moduleQueue.slice(0, -1));
+					if (moduleQueue.length) {
+						loadNextModule.bind(self)(moduleQueue, callback);
+					} else if (typeof callback === "function") {
+						callback(self.modules[moduleId].exports);
+					}
+					
 					
 				};
 				
@@ -147,6 +152,10 @@
 			};
 			
 			document.body.appendChild(iframe);
+			
+		} else if (typeof callback === "function") {
+			
+			callback();
 			
 		}
 		
@@ -159,16 +168,16 @@
 		
 		self.path = path;
 		
-		self.modules = [];
+		self.modules = {};
 		
 	}
 	
 	
-	Comeon.prototype.run = function run(moduleRequest) {
+	Comeon.prototype.run = function run(moduleRequest, callback) {
 		
 		var self = this;
 		
-		loadNextModule.bind(self)(enqueueModule.bind(self)(getModuleId("", moduleRequest)));
+		loadNextModule.bind(self)(enqueueModule.bind(self)(getModuleId("", moduleRequest)), callback);
 		
 	}
 	
