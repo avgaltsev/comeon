@@ -22,7 +22,7 @@ Or do it without magic:
 			// Entry point
 			comeon.require("main");
 			
-			// Another entry point
+			// Another entry point with callback function
 			comeon.require("another_main", function (exports) {
 				console.log(exports);
 			});
