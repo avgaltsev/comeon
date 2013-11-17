@@ -173,7 +173,7 @@
 	}
 	
 	
-	Comeon.prototype.run = function run(moduleRequest, callback) {
+	Comeon.prototype.require = function require(moduleRequest, callback) {
 		
 		var self = this;
 		
@@ -195,7 +195,7 @@
 			
 			var comeon = new Comeon(script.getAttribute("data-path") || "/");
 			
-			comeon.run(main);
+			comeon.require(main);
 			
 		});
 		

@@ -1,10 +1,8 @@
-Comeon
-======
+# Comeon
 
-CommonJS module loader for browsers
+CommonJS module loader for browsers.
 
-Usage
------
+## Usage
 
 Link comeon.js to the page with `data-path` and `data-main` attributes that define where your modules are placed and which of them is the main respectively:
 
@@ -22,10 +20,12 @@ Or do it without magic:
 			var comeon = new Comeon("scripts/");
 			
 			// Entry point
-			comeon.run("main");
+			comeon.require("main");
 			
 			// Another entry point
-			comeon.run("another-main");
+			comeon.require("another_main", function (exports) {
+				console.log(exports);
+			});
 			
 		};
 		
