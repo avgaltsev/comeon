@@ -1,7 +1,7 @@
 (function (window) {
 	
 	
-	var requirePattern = /(?:^|\s|=|;)require\((?:"|')([^"']*)(?:"|')\)/g;
+	var requirePattern = /(?:^|\s|=|;)require\(("|')([\w-\/\.]*)\1\)/g;
 	
 	
 	function searchRequires(url) {
@@ -143,7 +143,6 @@
 					} else if (typeof callback === "function") {
 						callback(self.modules[moduleId].exports);
 					}
-					
 					
 				};
 				
