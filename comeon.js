@@ -19,7 +19,7 @@
 				var match;
 				
 				while ((match = requirePattern.exec(xhr.responseText)) !== null) {
-					requires.push(match[1]);
+					requires.push(match[2]);
 				}
 				
 			}
