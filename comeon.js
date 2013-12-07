@@ -39,7 +39,7 @@
 		
 		var moduleId = [];
 		
-		(/^\.\.?\//.test(moduleRequest) ? (moduleContext + moduleRequest) : moduleRequest).replace(/\.(?:js|node)$/, "").split("/").forEach(function (value) {
+		(/^\.\.?\//.test(moduleRequest) ? (moduleContext + moduleRequest) : moduleRequest).replace(/\.js$/, "").split("/").forEach(function (value) {
 			
 			if (value === ".") {
 			} else if (value === "..") {
@@ -85,9 +85,13 @@
 		
 		if (!self.modules[moduleId]) {
 			
-			var url = self.path + moduleId + ".js?ts=";// + (new Date()).valueOf();
-			
+			var url = self.path + moduleId + ".js";
 			var requires = searchRequires(url);
+			
+			if (!requires) {
+				url = self.path + moduleId + "/index.js";
+				requires = searchRequires(url);
+			}
 			
 			if (requires) {
 				
