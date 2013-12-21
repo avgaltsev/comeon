@@ -85,25 +85,28 @@
 		
 		if (!self.modules[moduleId]) {
 			
-			var url = self.path + moduleId + ".js";
-			var requires = searchRequires(url);
+			var moduleUrl = self.path + moduleId + ".js";
+			var moduleContext = getModuleContext(moduleId);
+			var requires = searchRequires(moduleUrl);
 			
 			if (!requires) {
-				url = self.path + moduleId + "/index.js";
-				requires = searchRequires(url);
+				moduleUrl = self.path + moduleId + "/index.js";
+				moduleContext = moduleId + "/";
+				requires = searchRequires(moduleUrl);
 			}
 			
 			if (requires) {
 				
 				self.modules[moduleId] = {
-					url: url,
+					url: moduleUrl,
+					context: moduleContext,
 					exports: {}
 				};
 				
 				moduleQueue.push(moduleId);
 				
 				requires.forEach(function (value) {
-					Array.prototype.push.apply(moduleQueue, enqueueModule.bind(self)(getModuleId(getModuleContext(moduleId), value)));
+					Array.prototype.push.apply(moduleQueue, enqueueModule.bind(self)(getModuleId(moduleContext, value)));
 				});
 				
 			} else {
@@ -137,7 +140,7 @@
 				
 				iframeWindow.global = window;
 				
-				iframeWindow.require = require.bind(self, getModuleContext(moduleId));
+				iframeWindow.require = require.bind(self, self.modules[moduleId].context);
 				
 				iframeWindow.module = {
 					exports: {}
