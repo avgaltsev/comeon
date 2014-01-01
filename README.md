@@ -1,6 +1,6 @@
 # Comeon
 
-CommonJS module loader for browsers.
+Experimental CommonJS module loader for browsers.
 
 ## Usage
 

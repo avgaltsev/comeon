@@ -1,6 +1,8 @@
 (function (window) {
 	
 	
+	"use strict";
+	
 	var requirePattern = /(?:^|\s|=|;)require\(("|')([\w-\/\.]*)\1\)/g;
 	
 	
@@ -68,10 +70,10 @@
 		
 		var moduleId = getModuleId(moduleContext, moduleRequest);
 		
-		if (self.modules[moduleId] && self.modules[moduleId].exports) {
+		if (self.modules && self.modules[moduleId] && self.modules[moduleId].exports) {
 			return self.modules[moduleId].exports;
 		} else {
-			throw Error("Module not found: \"" + moduleId + "\"");
+			throw new Error("Module not found: \"" + moduleId + "\"");
 		}
 		
 	}
@@ -144,7 +146,7 @@
 				
 				iframeWindow.module = {
 					exports: {}
-				}
+				};
 				
 				iframeWindow.exports = iframeWindow.module.exports;
 				
@@ -194,7 +196,7 @@
 		
 		loadNextModule.bind(self)(enqueueModule.bind(self)(getModuleId("", moduleRequest)), callback);
 		
-	}
+	};
 	
 	
 	window.Comeon = Comeon;
