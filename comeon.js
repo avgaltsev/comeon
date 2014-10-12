@@ -85,7 +85,7 @@
 		
 		var moduleQueue = [];
 		
-		if (!self.modules[moduleId]) {
+		//if (!self.modules[moduleId]) {
 			
 			var moduleUrl = self.path + moduleId + ".js";
 			var moduleContext = getModuleContext(moduleId);
@@ -108,14 +108,21 @@
 				moduleQueue.push(moduleId);
 				
 				requires.forEach(function (value) {
-					Array.prototype.push.apply(moduleQueue, enqueueModule.bind(self)(getModuleId(moduleContext, value)));
+					enqueueModule.bind(self)(getModuleId(moduleContext, value)).forEach(function (moduleId) {
+						var index = moduleQueue.indexOf(moduleId);
+						if (~index) {
+							moduleQueue.splice(index, 1);
+						}
+						moduleQueue.push(moduleId);
+					});
+					//Array.prototype.push.apply(moduleQueue, enqueueModule.bind(self)(getModuleId(moduleContext, value)));
 				});
 				
 			} else {
 				self.modules[moduleId] = {};
 			}
 			
-		}
+		//}
 		
 		return moduleQueue;
 		
