@@ -1,0 +1,4 @@
+node_modules
+
+!/test/modules/node_modules/
+!/test/modules/subdirectory/node_modules/

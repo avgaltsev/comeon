@@ -1,0 +1,24 @@
+{
+	"name": "comeon",
+	"description": "CommonJS browser module loader experiment.",
+	"author": "Anton Galtsev <avgaltsev@gmail.com>",
+	"license": "MIT",
+	"version": "0.0.0",
+
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/avgaltsev/comeon.git"
+	},
+
+	"scripts": {
+		"test": "node_modules/karma/bin/karma start"
+	},
+
+	"devDependencies": {
+		"mocha": "^2.1.0",
+		"chai": "^1.10.0",
+		"karma": "^0.12.31",
+		"karma-mocha": "^0.1.10",
+		"karma-chrome-launcher": "^0.1.7"
+	}
+}

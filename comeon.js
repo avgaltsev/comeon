@@ -1,7 +1,7 @@
 (function (window) {
 	"use strict";
 
-	var requirePattern = /(?:^|\s|=|;)require\(("|')([\w-\/\.]*)\1\)/g;
+	var requirePattern = /\brequire\(("|')([^"']+)\1\)/g;
 
 
 	function searchRequires(url) {
@@ -55,32 +55,46 @@
 
 		var moduleId = getModuleId(moduleContext, moduleRequest);
 
-		if (self.modules && self.modules[moduleId] && self.modules[moduleId].exports) {
-			return self.modules[moduleId].exports;
+		if (self._modules && self._modules[moduleId] && self._modules[moduleId].exports) {
+			return self._modules[moduleId].exports;
 		} else {
 			throw new Error("Module not found: \"" + moduleId + "\"");
 		}
 	}
 
 
-	function enqueueModule(moduleId) {
+
+	function Comeon(path) { // TODO: multiple paths
+		path = path ? ("" + path) : "/";
+
+		if (path[path.length - 1] !== "/") {
+			path = path + "/";
+		}
+
+		this._path = path;
+		this._modules = {};
+	}
+
+	var prototype = Comeon.prototype;
+
+	prototype._enqueueModule = function enqueueModule(moduleId) {
 		var self = this;
 
 		var moduleQueue = [];
 
-		//if (!self.modules[moduleId]) {
-			var moduleUrl = self.path + moduleId + ".js";
+		//if (!self._modules[moduleId]) {
+			var moduleUrl = self._path + moduleId + ".js";
 			var moduleContext = getModuleContext(moduleId);
 			var requires = searchRequires(moduleUrl);
 
 			if (!requires) {
-				moduleUrl = self.path + moduleId + "/index.js";
+				moduleUrl = self._path + moduleId + "/index.js";
 				moduleContext = moduleId + "/";
 				requires = searchRequires(moduleUrl);
 			}
 
 			if (requires) {
-				self.modules[moduleId] = {
+				self._modules[moduleId] = {
 					url: moduleUrl,
 					context: moduleContext,
 					exports: {}
@@ -99,15 +113,14 @@
 					//Array.prototype.push.apply(moduleQueue, enqueueModule.bind(self)(getModuleId(moduleContext, value)));
 				});
 			} else {
-				self.modules[moduleId] = {};
+				self._modules[moduleId] = null;
 			}
 		//}
 
 		return moduleQueue;
-	}
+	};
 
-
-	function loadNextModule(moduleQueue, callback) {
+	prototype._loadNextModule = function loadNextModule(moduleQueue, callback) {
 		var self = this;
 
 		if (moduleQueue.length) {
@@ -124,7 +137,7 @@
 
 				iframeWindow.global = window;
 
-				iframeWindow.require = require.bind(self, self.modules[moduleId].context);
+				iframeWindow.require = require.bind(self, self._modules[moduleId].context);
 
 				iframeWindow.module = {
 					exports: {}
@@ -134,15 +147,15 @@
 
 				var script = iframeDocument.createElement("script");
 
-				script.src = self.modules[moduleId].url;
+				script.src = self._modules[moduleId].url;
 
 				script.onload = function () {
-					self.modules[moduleId].exports = iframeWindow.module.exports;
+					self._modules[moduleId].exports = iframeWindow.module.exports;
 
 					if (moduleQueue.length) {
 						loadNextModule.bind(self)(moduleQueue, callback);
 					} else if (typeof callback === "function") {
-						callback(self.modules[moduleId].exports);
+						callback(self._modules[moduleId].exports);
 					}
 				};
 
@@ -153,35 +166,25 @@
 		} else if (typeof callback === "function") {
 			callback();
 		}
-	}
-
-
-	function Comeon(path) { // TODO: multiple paths
-		var self = this;
-
-		self.path = path + "/";
-
-		self.modules = {};
-	}
-
-
-	Comeon.prototype.require = function require(moduleRequest, callback) {
-		var self = this;
-
-		loadNextModule.bind(self)(enqueueModule.bind(self)(getModuleId("", moduleRequest)), callback);
 	};
 
+	prototype.require = function require(moduleRequests, callback) {
+		// if (!Array.isArray(moduleRequests)) {
+		// 	moduleRequests = [moduleRequests];
+		// }
+
+		this._loadNextModule(this._enqueueModule(getModuleId("", moduleRequests)), callback);
+	};
 
 	window.Comeon = Comeon;
 
-
-	var script = Array.prototype.slice.call(document.getElementsByTagName("script"), -1)[0];
-
-	var main = script.getAttribute("data-main");
+	var script = Array.prototype.slice.call(document.getElementsByTagName("script"), -1)[0],
+		path = script.getAttribute("data-path"),
+		main = script.getAttribute("data-main");
 
 	if (main) {
 		window.addEventListener("load", function () {
-			var comeon = new Comeon(script.getAttribute("data-path") || "/");
+			var comeon = new Comeon(path);
 			comeon.require(main);
 		});
 	}
