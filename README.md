@@ -2,6 +2,8 @@
 
 Experimental CommonJS module loader for browsers.
 
+This solution loads CommonJS specification modules to browser without modifying their source code by preprocessors at server side or evaluating in browser. Modules have been loaded and run as is.
+
 ## Usage
 
 Link comeon.js to the page with `data-path` and `data-main` attributes that define where your modules are placed and which of them is the main respectively:

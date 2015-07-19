@@ -7,7 +7,8 @@ module.exports = function (config) {
 		files: [
 			"node_modules/chai/chai.js",
 			"comeon.js",
-			"test/*.test.js",
+			"test/unit.test.js",
+			//"test/behavior.test.js",
 			{
 				pattern: "test/modules/**/*.js",
 				included: false

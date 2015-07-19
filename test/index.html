@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Tests</title>
+		<script src="../comeon.js"></script>
+	</head>
+
+	<body>
+		<script>
+			(function () {
+				var comeon = new Comeon({
+					path: "modules"
+				});
+
+				comeon.require(["./relative3"]).then(function () {
+					comeon;
+					debugger;
+				}, function (reason) {
+					console.error(reason);
+				});
+			})();
+		</script>
+	</body>
+</html>
